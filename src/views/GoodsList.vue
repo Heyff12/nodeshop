@@ -40,9 +40,9 @@
                   </div>
                 </li>
               </ul>
-              <div v-infinite-scroll="loadMore" infinite-scroll-disabled="busy" infinite-scroll-distance="20">
-                <!-- <img src="../assets/loading-spinning-bubbles.svg" v-show="loading"/> -->
-                加载中。。。
+              <div  class="view-more-normal" v-infinite-scroll="loadMore" infinite-scroll-disabled="busy" infinite-scroll-distance="20">
+                <img src="./../assets/loading-spinning-bubbles.svg" v-show="loading">
+                <!-- 加载中。。。 -->
               </div>
             </div>
           </div>
@@ -82,7 +82,7 @@ export default {
       sortFlag: true,
       page: 1,
       pageSize: 8,
-      busy: false,
+      busy: false,//停止加载
       loading: false,
       mdShowCart:false,//加入购物车 成功
       mdShow: false, //弹框显示与否--加入失败
