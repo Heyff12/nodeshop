@@ -77,7 +77,7 @@
                   </div>
                   <div class="addr-opration addr-default" v-if="item.isDefault">Default address</div>
                 </li>
-                <li class="addr-new">
+                <li class="addr-new" v-show="addressList_len<=7">
                   <div class="add-new-inner" @click="mdShowAdd=true">
                     <i class="icon-add">
                   <svg class="icon icon-add"><use xlink:href="#icon-add"></use></svg>
@@ -87,14 +87,14 @@
                 </li>
               </ul>
             </div>
-            <div class="shipping-addr-more">
+            <div class="shipping-addr-more" v-show="addressList_len>3">
               <a class="addr-more-btn up-down-btn" href="javascript:;" @click="expand" v-bind:class="{'open':limit>3}">
             more
-            <i class="i-up-down">
-              <i class="i-up-down-l"></i>
-              <i class="i-up-down-r"></i>
-            </i>
-          </a>
+                <i class="i-up-down">
+                  <i class="i-up-down-l"></i>
+                  <i class="i-up-down-r"></i>
+                </i>
+              </a>
             </div>
           </div>
           <!-- shipping method-->
@@ -118,7 +118,8 @@
             </div>
           </div>
           <div class="next-btn-wrap">
-            <router-link class="btn btn--m btn--red" v-bind:to="{path:'orderConfirm',query:{'addressId':selectAddrId}}">Next</router-link>
+            <!-- <router-link class="btn btn--m btn--red" v-bind:to="{path:'orderConfirm',query:{'addressId':selectAddrId}}">Next</router-link> -->
+            <a class="btn btn--m btn--red" href="javascript:void(0)" @click="nextPage">Next</a>
           </div>
         </div>
       </div>
@@ -134,10 +135,16 @@
     </modal>
     <modal :mdShow="mdShowAdd" @close="closeModal">
       <form slot="message">
-        <input type="text" name="" placeholder="姓名">
-        <input type="text" name="" placeholder="电话">
-        <input type="text" name="" placeholder="地址">
-        <input type="text" name="" placeholder="邮编">        
+        <input type="text" name="" v-model="ruleForm.userName" placeholder="姓名">
+        <br/>
+        <input type="text" name="" v-model="ruleForm.tel" placeholder="电话">
+        <br/>
+        <input type="text" name="" v-model="ruleForm.streetName" placeholder="地址">
+        <br/>
+        <input type="text" name="" v-model="ruleForm.postCode" placeholder="邮编">
+        <br/>
+        <input type="radio" name="isDefault" v-model="ruleForm.isDefault" value="true">默认
+        <input type="radio" name="isDefault" v-model="ruleForm.isDefault" value="false" checked>不默认
       </form>
       <div slot="btnGroup">
         <a href="javascript:void(0)" class="btn btn-m" @click="addAddeSure">确认</a>
@@ -159,10 +166,20 @@ export default {
       addressList: [],
       limit: 3,
       checkIndex: 0,
-      selectAddrId:'',
+      selectAddrId: '',
       addressId: '',
       mdShowCart: false, //加入购物车 成功
-      mdShowAdd:false,
+      mdShowAdd: false,
+      ruleForm: {
+        userName: '',
+        tel: '',
+        streetName: '',
+        postCode: '',
+        isDefault: false
+      },
+      max_len: 8, //最大的地址条数
+      addr_ok: 3, //可以继续添加
+      addr_no: 4, //不能添加
     }
   },
   components: {
@@ -175,9 +192,19 @@ export default {
     this.init();
   },
   computed: {
+    // limit(){
+    //   if(this.addressList.length>this.max_len){
+    //     return 4;
+    //   }else{
+    //     return 3;
+    //   }
+    // },
     addressListFilter() {
       return this.addressList.slice(0, this.limit)
-    }
+    },
+    addressList_len() {
+      return this.addressList.length;
+    },
   },
   methods: {
     init() {
@@ -185,16 +212,37 @@ export default {
         let res = response.data;
         if (res.status == '0') {
           this.addressList = res.result;
+          //控制添加按钮不显示时第一行的信息条数
+          if (this.addressList.length >= this.max_len) {
+            this.limit = this.addr_no;
+          } else {
+            this.limit = this.addr_ok;
+          }
+          //获取默认选中地址id
+          // for (let item in this.addressList) {
+          //   if (item.isDefault) {
+          //     this.selectAddrId = item.addressId;
+          //   }
+          // }
+          this.addressList.forEach((item) => {
+            if (item.isDefault) {
+              this.selectAddrId = item.addressId;
+            }
+          });
+          console.log(this.selectAddrId)
         }
       });
     },
     expand() {
-      if (this.limit == 3) {
+      if (this.limit == this.addr_ok || this.limit == this.addr_no) {
         this.limit = this.addressList.length;
-        console.log(this.addressList.length);
-        console.log(this.limit);
       } else {
-        this.limit = 3;
+        //控制添加按钮不显示时第一行的信息条数
+        if (this.addressList.length >= this.max_len) {
+          this.limit = this.addr_no;
+        } else {
+          this.limit = this.addr_ok;
+        }
       }
     },
     //设置默认地址
@@ -213,23 +261,46 @@ export default {
       this.mdShowCart = true;
     },
     delAddrSure() {
+      if (this.addressList.length == 1) {
+        alert("最后一个不能删除");
+        this.mdShowCart = false;
+        return false;
+      }
       this.axios.post('/users/delAddr', {
         addressId: this.addressId
       }).then((response) => {
         let res = response.data;
         if (res.status == '0') {
           this.init();
-          this.mdShowCart = false;
+        } else {
+          alert(res.msg);
         }
+        this.mdShowCart = false;
       });
     },
-    addAddeSure(){
-
+    //增加地址
+    addAddeSure() {
+      this.axios.post('/users/addAddr', this.ruleForm).then((response) => {
+        let res = response.data;
+        if (res.status == '0') {
+          this.init();
+          this.mdShowAdd = false;
+        }
+      });
     },
     //关闭弹框
     closeModal() {
       this.mdShowCart = false;
       this.mdShowAdd = false;
+    },
+    nextPage() {
+      let selectAddrId = this.selectAddrId;
+      this.$router.push({
+        path: "/orderConfirm",
+        query: {
+          'addressId': selectAddrId
+        }
+      });
     },
   }
 }

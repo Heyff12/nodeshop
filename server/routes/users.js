@@ -41,11 +41,11 @@ router.post('/login', function(req, res, next) {
             userName: doc.userName
           }
         });
-      }else{
+      } else {
         res.json({
           status: '1',
           msg: '账号密码错误',
-          result:''
+          result: ''
         });
       }
     }
@@ -435,4 +435,53 @@ router.get('/getCartCount', function(req, res, next) {
 
   }
 });
+
+//增加地址
+router.post('/addAddr', function(req, res, next) {
+  var userId = req.cookies.userId;
+  var newAddr = {
+    userName: req.body.userName,
+    streetName: req.body.streetName,
+    postCode: req.body.postCode,
+    tel: req.body.tel,
+    isDefault: req.body.isDefault
+  };
+
+  User.findOne({ userId: userId }, function(err, doc) {
+    if (err) {
+      res.json({
+        status: '1',
+        msg: err.message,
+        result: ''
+      });
+    } else {
+      var addressList = doc.addressList;
+      var addressId='';
+      addressList.forEach((item) => {
+          addressId=item.addressId;
+          if (newAddr.isDefault) {
+            item.isDefault = false;
+          }
+      });
+      newAddr.addressId=addressId-0+1;
+      doc.addressList.push(newAddr);
+      doc.save(function(err1, doc1) {
+        if (err1) {
+          res.json({
+            status: '1',
+            msg: err1.message,
+            result: ''
+          });
+        } else {
+          res.json({
+            status: '0',
+            msg: '',
+            result: ''
+          });
+        }
+      });
+    }
+  });
+});
+
 module.exports = router;
