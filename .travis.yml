@@ -1,3 +1,27 @@
 language: node_js
 node_js:
 - 8.11.3
+branches:
+  only:
+  - master
+addons:
+  ssh_known_hosts:
+  - 182.92.75.69
+before_install:
+- openssl aes-256-cbc -K $encrypted_f8f2226d74ef_key -iv $encrypted_f8f2226d74ef_iv
+  -in id_rsa_remote_login.enc -out ~/.ssh/id_rsa_remote_login -d
+- chmod 600 ~/.ssh/id_rsa_remote_login
+- eval "$(ssh-agent -s)"
+- echo -e "Host 182.92.75.69\n\tUser root\n\tHostName 182.92.75.69\n\tPort 22\n\tStrictHostKeyChecking
+  no\n\tIdentityFile ~/.ssh/id_rsa_remote_login\n\tIdentitiesOnly yes\n\tGSSAPIAuthentication
+  no\n" >> ~/.ssh/config
+- ssh-add ~/.ssh/id_rsa_remote_login
+install:
+- npm install
+script:
+- npm run build
+after_success:
+- travis_wait scp -i ~/.ssh/id_rsa_remote_login -o GSSAPIAuthentication=no -r dist/
+  root@182.92.75.69:/project/nodeweb/nodeshop/src
+- ssh -i ~/.ssh/id_rsa_remote_login root@182.92.75.69 "cd /project/nodeweb/nodeshop
+  && rm -rf public && mv src public && exit"
