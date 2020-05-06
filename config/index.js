@@ -29,13 +29,13 @@ module.exports = {
     assetsPublicPath: '/',
     proxyTable: {
         '/goods':{
-            target:'http://localhost:3000'
+            target:'http://localhost:3003'
         },
         '/goods/*':{
-            target:'http://localhost:3000'
+            target:'http://localhost:3003'
         },
         '/users/**':{
-            target:'http://localhost:3000'
+            target:'http://localhost:3003'
         }
         // '/goods':{
         //     target:'http://182.92.75.69:3000'
